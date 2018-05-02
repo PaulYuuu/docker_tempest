@@ -15,25 +15,28 @@ RUN sed -i s/^deb-src.*// /etc/apt/sources.list && \
 # Clone and install tempest
 RUN cd /root/tempest/source && \
     git clone -b 18.0.0 https://git.openstack.org/openstack/tempest ./ && \
-    pip install -r ./requirements.txt && \
+    pip install ./ && \
     pip install -r ./test-requirements.txt && \
-    python setup.py install && \
-    pip install nose tox && \
+    pip install nose tox
+
+# Configuration tempest
+RUN cd /root/tempest/source && \
     tox -egenconfig && \
-    cp etc/{tempest.conf.sample,tempest.conf} && \
-    cp etc/{accounts.yaml.sample,accounts.yaml}
+    cp etc/accounts.yaml.sample etc/accounts.yaml && \
+    cp etc/tempest.conf.sample etc/tempest.conf
 
 # Running tempest setup
-RUN cd /root/tempest/source/tempest && \
-    for i in designate-tempest-plugin magnum-tempest-plugin neutron-tempest-plugin manila-tempest-plugin \
-             keystone-tempest-plugin murano-tempest-plugin heat-tempest-plugin tempest-horizon \
-             ironic-tempest-plugin octavia-tempest-plugin barbican-tempest-plugin; \
-          do git clone https://github.com/openstack/"$i" && \
-             pip install -e ./"$i" && \
-             pip install -r ./"$i"/test-requirements.txt; \
-        done && \
-    tempest init /root/tempest/workdir && \
+RUN tempest init /root/tempest/workdir && \
     cd /root/tempest/workdir && \
+    echo "[DEFAULT]" > .testr.conf && \
+    echo "test_command=OS_STDOUT_CAPTURE=${OS_STDOUT_CAPTURE:-1} \" >> .testr.conf && \
+    echo "             OS_STDERR_CAPTURE=${OS_STDERR_CAPTURE:-1} \" >> .testr.conf && \
+    echo "             OS_TEST_TIMEOUT=${OS_TEST_TIMEOUT:-500} \" >> .testr.conf && \
+    echo "             OS_TEST_LOCK_PATH=${OS_TEST_LOCK_PATH:-${TMPDIR:-'/tmp'}} \" .testr.conf && \
+    echo "             ${PYTHON:-python} -m subunit.run discover -t ${OS_TOP_LEVEL:-./} ${OS_TEST_PATH:-./tempest/test_discover} $LISTOPT $IDOPTION" >> .testr.conf && \
+    echo "test_id_option=--load-list $IDFILE" >> .testr.conf && \
+    echo "test_list_option=--list" >> .testr.conf && \
+    echo "group_regex=([^\.]*\.)*" >> .testr.conf && \
     testr init
 
 WORKDIR /root/tempest/workdir
