@@ -24,11 +24,19 @@ RUN cd /root/tempest/source && \
     tox -egenconfig && \
     cp etc/accounts.yaml.sample etc/accounts.yaml && \
     cp etc/tempest.conf.sample etc/tempest.conf
-COPY .testr.conf /root/tempest/workdir
 
 # Running tempest setup
 RUN tempest init /root/tempest/workdir && \
     cd /root/tempest/workdir && \
+    echo "[DEFAULT]" > .testr.conf && \
+    echo "test_command=OS_STDOUT_CAPTURE=\${OS_STDOUT_CAPTURE:-1} \\" >> .testr.conf && \
+    echo "             OS_STDERR_CAPTURE=\${OS_STDERR_CAPTURE:-1} \\" >> .testr.conf && \
+    echo "             OS_TEST_TIMEOUT=\${OS_TEST_TIMEOUT:-500} \\" >> .testr.conf && \
+    echo "             OS_TEST_LOCK_PATH=\${OS_TEST_LOCK_PATH:-\${TMPDIR:-'/tmp'}} \\" >> .testr.conf && \
+    echo "             \${PYTHON:-python} -m subunit.run discover -t \${OS_TOP_LEVEL:-./} \${OS_TEST_PATH:-./tempest/test_discover} \$LISTOPT \$IDOPTION " >> .testr.conf && \
+    echo "test_id_option=--load-list \$IDFILE" >> .testr.conf && \
+    echo "test_list_option=--list" >> .testr.conf && \
+    echo "group_regex=([^\\.]\*\\.)*" >> .testr.conf && \
     testr init
 
 WORKDIR /root/tempest/workdir
