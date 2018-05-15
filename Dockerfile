@@ -19,14 +19,14 @@ RUN apt-get update && apt-get install --yes \
 
 # Clone and install tempest
 RUN cd /home/tempest/source && \
-    git clone -b 18.0.0 https://git.openstack.org/openstack/tempest && \
+    git clone -b 18.0.0 https://git.openstack.org/openstack/tempest ./ && \
     pip install -r ./requirements.txt && \
     pip install -r ./test-requirements.txt && \
     pip install nose tox ipdb && \
     pip install .
 
 # Configuration tempest
-RUN cd /root/tempest/source && \
+RUN cd /home/tempest/source && \
     tox -egenconfig && \
     cp etc/accounts.yaml.sample etc/accounts.yaml && \
     cp etc/tempest.conf.sample etc/tempest.conf
