@@ -32,10 +32,10 @@ RUN cd /home/tempest/source && \
     cp etc/tempest.conf.sample etc/tempest.conf
 
 # Initialization tempest
-RUN tempest init /root/tempest/workdir
+RUN tempest init /home/tempest/workdir
 
 # Changing workdir
-WORKDIR /root/tempest/workdir
+WORKDIR /home/tempest/workdir
 
 # Set default command
 CMD ["/bin/bash"]
